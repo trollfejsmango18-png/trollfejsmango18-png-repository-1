@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Тетрис-пинатель: выбор скина</title>
+    <style>
+        * {
+            margin: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        body {
+            background: #1a1f2e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', Courier, monospace;
+            touch-action: pan-y pinch-zoom;
+            padding: 10px;
+        }
+        .game-wrapper {
+            max-width: 600px;
+            width: 100%;
+        }
+        .game-container {
+            background: #0b0d17;
+            padding: 16px 20px;
+            border-radius: 28px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.6);
+            border: 1px solid #3f4b6e;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 20px;
+            background: #10131f;
+            box-shadow: inset 0 0 10px #00000055, 0 10px 10px #00000033;
+            width: 100%;
+            height: auto;
+            touch-action: none;
+            cursor: pointer;
+        }
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            color: #b7c9e2;
+            font-weight: bold;
+            font-size: 18px;
+            text-shadow: 2px 2px 0 #0a0c14;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .score-box {
+            background: #1e263a;
+            padding: 6px 20px;
+            border-radius: 40px;
+            border: 1px solid #4d618b;
+            box-shadow: inset 0 2px 3px #00000088;
+            letter-spacing: 1px;
+        }
+        button {
+            background: #2f3b5c;
+            border: none;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            padding: 8px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            border-bottom: 3px solid #0f1421;
+            transition: 0.07s;
+            font-family: inherit;
+            min-width: 100px;
+            touch-action: manipulation;
+        }
+        button:hover {
+            background: #3f4e77;
+            border-bottom-width: 1px;
+            transform: translateY(2px);
+        }
+        button:active {
+            transform: translateY(2px);
+            border-bottom-width: 1px;
+        }
+        .hint {
+            margin-top: 10px;
+            color: #68759b;
+            font-size: 15px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .hint span {
+            background: #1e263a;
+            padding: 4px 14px;
+            border-radius: 30px;
+            border: 1px solid #4f6390;
+            display: inline-block;
+        }
+
+        /* Модальное окно выбора скинов */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.2s;
+            padding: 15px;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .skin-modal {
+            background: #151e30;
+            border-radius: 36px;
+            padding: 24px 20px;
+            max-width: 500px;
+            width: 100%;
+            border: 2px solid #4f6390;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+        .modal-title {
+            color: #ffd966;
+            font-size: 28px;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 0 #0a0c14;
+            letter-spacing: 2px;
+        }
+        .skin-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+        .skin-option {
+            background: #1e2a42;
+            border: 3px solid #3f4e6e;
+            border-radius: 50px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .skin-option.selected {
+            border-color: #ffd966;
+            background: #2a3a5a;
+            box-shadow: 0 0 15px #ffd96666;
+        }
+        .skin-preview {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #10131f;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            box-shadow: inset 0 0 10px black;
+        }
+        .skin-info {
+            flex: 1;
+        }
+        .skin-name {
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .skin-desc {
+            color: #9aaec9;
+            font-size: 14px;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        .modal-buttons button {
+            min-width: 130px;
+            font-size: 18px;
+            padding: 12px 20px;
+        }
+        .btn-primary {
+            background: #3d5c3d;
+            border-bottom-color: #1d2e1d;
+        }
+        .btn-primary:hover {
+            background: #4e7a4e;
+        }
+        .btn-secondary {
+            background: #5a3e5a;
+            border-bottom-color: #2e1d2e;
+        }
+        .btn-secondary:hover {
+            background: #7a4e7a;
+        }
+        .current-skin-indicator {
+            background: #2b3652;
+            color: #ffd966;
+            border-color: #b5944b;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .current-skin-indicator:active {
+            background: #3f4e77;
+        }
+    </style>
+</head>
+<body>
+<div class="game-wrapper">
+    <div class="game-container">
+        <canvas id="gameCanvas" width="500" height="400"></canvas>
+        <div class="status-bar">
+            <span class="score-box">💥 <span id="scoreDisplay">0</span></span>
+            <div style="display: flex; gap: 6px;">
+                <button id="restartBtn">🔄 заново</button>
+                <button id="openSkinMenuBtn" class="current-skin-indicator">👑 скины</button>
+            </div>
+        </div>
+        <div class="hint">
+            <span class="mobile-indicator">👆 тяни платформу</span>
+            <span class="current-skin-indicator" id="currentSkinDisplay">⚪ белый</span>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно выбора скинов -->
+<div class="modal-overlay" id="skinModal">
+    <div class="skin-modal">
+        <div class="modal-title">⚡ ВЫБОР СКИНА ⚡</div>
+        <div class="skin-grid">
+            <!-- Белый -->
+            <div class="skin-option" data-skin="white" id="skinOptionWhite">
+                <div class="skin-preview" style="background: linear-gradient(135deg, #ffffff, #cccccc); color: #333;">⚪</div>
+                <div class="skin-info">
+                    <div class="skin-name">Белый жемчуг</div>
+                    <div class="skin-desc">Классический светлый стиль</div>
+                </div>
+            </div>
+            <!-- Чёрный -->
+            <div class="skin-option" data-skin="black" id="skinOptionBlack">
+                <div class="skin-preview" style="background: linear-gradient(135deg, #444444, #111111); color: #ddd;">⚫</div>
+                <div class="skin-info">
+                    <div class="skin-name">Чёрный обсидиан</div>
+                    <div class="skin-desc">Глянцевый тёмный</div>
+                </div>
+            </div>
+            <!-- Царский -->
+            <div class="skin-option" data-skin="royal" id="skinOptionRoyal">
+                <div class="skin-preview" style="background: linear-gradient(to bottom, #1e7e34, #f5f0d1, #1a1a1a);">👑</div>
+                <div class="skin-info">
+                    <div class="skin-name">Царский</div>
+                    <div class="skin-desc">Зелёно-бело-чёрный + корона</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-primary" id="confirmSkinBtn">✅ подтвердить</button>
+            <button class="btn-secondary" id="cancelSkinBtn">❌ отмена</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreSpan = document.getElementById('scoreDisplay');
+        const currentSkinDisplay = document.getElementById('currentSkinDisplay');
+        
+        // Элементы модального окна
+        const modal = document.getElementById('skinModal');
+        const openMenuBtn = document.getElementById('openSkinMenuBtn');
+        const confirmBtn = document.getElementById('confirmSkinBtn');
+        const cancelBtn = document.getElementById('cancelSkinBtn');
+        const skinOptions = document.querySelectorAll('.skin-option');
+
+        // ----- РАЗМЕРЫ -----
+        const CANVAS_W = 500, CANVAS_H = 400;
+        const BLOCK_ROWS = 6;
+        const BLOCK_COLS = 8;
+        const BLOCK_W = 50;
+        const BLOCK_H = 22;
+        const BLOCKS_OFFSET_X = 40;
+        const BLOCKS_OFFSET_Y = 40;
+
+        const BALL_RADIUS = 9;
+        const PADDLE_W = 90;
+        const PADDLE_H = 15;
+
+        // ----- СКИНЫ МЯЧА -----
+        const SKINS = ['white', 'black', 'royal'];
+        let currentSkinIndex = 0; // 0-white, 1-black, 2-royal
+        let selectedSkinIndex = 0; // для предпросмотра в меню
+
+        // ----- ИГРОВЫЕ ПЕРЕМЕННЫЕ -----
+        let blocks = [];
+        let paddleX = (CANVAS_W - PADDLE_W) / 2;
+        let ball = { x: 250, y: 300, dx: 4, dy: -4, active: true };
+        let score = 0;
+        let gameOver = false;
+        let win = false;
+
+        // ----- СБОРКА БЛОКОВ -----
+        function buildBlocks() {
+            const newBlocks = [];
+            for (let row = 0; row < BLOCK_ROWS; row++) {
+                for (let col = 0; col < BLOCK_COLS; col++) {
+                    let color = '#44aaee';
+                    if ((row + col) % 3 === 1) color = '#d46ef0';
+                    else if ((row + col) % 3 === 2) color = '#f5b342';
+                    if (row > 3) color = '#3b9bda';
+                    if (row > 4) color = '#c742f5';
+
+                    newBlocks.push({
+                        x: BLOCKS_OFFSET_X + col * BLOCK_W,
+                        y: BLOCKS_OFFSET_Y + row * BLOCK_H,
+                        w: BLOCK_W - 2,
+                        h: BLOCK_H - 2,
+                        active: true,
+                        color: color
+                    });
+                }
+            }
+            return newBlocks;
+        }
+
+        function resetGame() {
+            blocks = buildBlocks();
+            paddleX = (CANVAS_W - PADDLE_W) / 2;
+            ball = { x: 250, y: 300, dx: 4, dy: -4, active: true };
+            score = 0;
+            gameOver = false;
+            win = false;
+            updateScore();
+            updateSkinDisplay();
+        }
+
+        function updateScore() {
+            scoreSpan.textContent = score;
+        }
+
+        function updateSkinDisplay() {
+            const names = ['⚪ белый', '⚫ чёрный', '👑 царский'];
+            currentSkinDisplay.textContent = names[currentSkinIndex];
+        }
+
+        // ----- ФИЗИКА МЯЧА С БЛОКАМИ -----
+        function handleBallBlockCollision() {
+            if (!ball.active || gameOver || win) return;
+
+            for (let i = 0; i < blocks.length; i++) {
+                const b = blocks[i];
+                if (!b.active) continue;
+
+                const closestX = Math.max(b.x, Math.min(ball.x, b.x + b.w));
+                const closestY = Math.max(b.y, Math.min(ball.y, b.y + b.h));
+                const dx = ball.x - closestX;
+                const dy = ball.y - closestY;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+
+                if (dist < BALL_RADIUS) {
+                    const leftDist   = ball.x - (b.x - BALL_RADIUS);
+                    const rightDist  = (b.x + b.w + BALL_RADIUS) - ball.x;
+                    const topDist    = ball.y - (b.y - BALL_RADIUS);
+                    const bottomDist = (b.y + b.h + BALL_RADIUS) - ball.y;
+
+                    const minX = Math.min(leftDist, rightDist);
+                    const minY = Math.min(topDist, bottomDist);
+
+                    if (minX < minY) {
+                        ball.dx = (leftDist < rightDist) ? -Math.abs(ball.dx) : Math.abs(ball.dx);
+                    } else {
+                        ball.dy = (topDist < bottomDist) ? -Math.abs(ball.dy) : Math.abs(ball.dy);
+                    }
+
+                    b.active = false;
+                    score++;
+                    updateScore();
+                    break;
+                }
+            }
+        }
+
+        // ----- ДВИЖЕНИЕ МЯЧА -----
+        function update() {
+            if (gameOver || win || !ball.active) return;
+
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // стены
+            if (ball.x - BALL_RADIUS <= 0) { ball.x = BALL_RADIUS; ball.dx = -ball.dx; }
+            if (ball.x + BALL_RADIUS >= CANVAS_W) { ball.x = CANVAS_W - BALL_RADIUS; ball.dx = -ball.dx; }
+            if (ball.y - BALL_RADIUS <= 0) { ball.y = BALL_RADIUS; ball.dy = -ball.dy; }
+
+            // платформа
+            if (ball.y + BALL_RADIUS >= CANVAS_H - PADDLE_H &&
+                ball.x >= paddleX && ball.x <= paddleX + PADDLE_W &&
+                ball.dy > 0) {
+                let hitPos = (ball.x - paddleX) / PADDLE_W;
+                let angle = (hitPos - 0.5) * 1.8;
+                let speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+                speed = Math.min(speed + 0.3, 8);
+                ball.dx = Math.sin(angle) * speed;
+                ball.dy = -Math.cos(angle) * speed;
+                ball.y = CANVAS_H - PADDLE_H - BALL_RADIUS - 1;
+            }
+
+            // проигрыш
+            if (ball.y - BALL_RADIUS > CANVAS_H) {
+                gameOver = true;
+                ball.active = false;
+                return;
+            }
+
+            // победа
+            const anyLeft = blocks.some(b => b.active);
+            if (!anyLeft) {
+                win = true;
+                ball.active = false;
+                return;
+            }
+
+            handleBallBlockCollision();
+        }
+
+        // ----- ОТРИСОВКА МЯЧА С ТЕКУЩИМ СКИНОМ (currentSkinIndex) -----
+        function drawBall() {
+            if (!ball.active) return;
+
+            if (currentSkinIndex === 0) { // белый
+                const gradient = ctx.createRadialGradient(ball.x-3, ball.y-3, 2, ball.x, ball.y, BALL_RADIUS+2);
+                gradient.addColorStop(0, '#ffffff');
+                gradient.addColorStop(0.7, '#e0e0e0');
+                gradient.addColorStop(1, '#b0b0b0');
+                ctx.fillStyle = gradient;
+                ctx.shadowColor = '#aaaaaa';
+            } 
+            else if (currentSkinIndex === 1) { // чёрный
+                const gradient = ctx.createRadialGradient(ball.x-3, ball.y-3, 2, ball.x, ball.y, BALL_RADIUS+2);
+                gradient.addColorStop(0, '#444444');
+                gradient.addColorStop(0.5, '#1a1a1a');
+                gradient.addColorStop(1, '#000000');
+                ctx.fillStyle = gradient;
+                ctx.shadowColor = '#777777';
+            } 
+            else if (currentSkinIndex === 2) { // царский
+                const gradient = ctx.createLinearGradient(ball.x, ball.y - BALL_RADIUS, ball.x, ball.y + BALL_RADIUS);
+                gradient.addColorStop(0, '#1e7e34');
+                gradient.addColorStop(0.45, '#f5f0d1');
+                gradient.addColorStop(0.55, '#f5f0d1');
+                gradient.addColorStop(1, '#1a1a1a');
+                ctx.fillStyle = gradient;
+                ctx.shadowColor = '#d4af37';
+            }
+
+            ctx.shadowBlur = 16;
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, BALL_RADIUS, 0, Math.PI * 2);
+            ctx.fill();
+
+            // для царского — корона
+            if (currentSkinIndex === 2) {
+                ctx.shadowBlur = 0;
+                ctx.font = 'bold 14px "Segoe UI", "Arial Unicode MS", Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#ffd966';
+                ctx.shadowColor = '#b8860b';
+                ctx.shadowBlur = 8;
+                ctx.fillText('👑', ball.x, ball.y - BALL_RADIUS - 4);
+            }
+
+            // общий блик
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.arc(ball.x-2, ball.y-2, 2.5, 0, Math.PI*2);
+            ctx.fillStyle = '#ffffff60';
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(ball.x-3, ball.y-3, 1.2, 0, Math.PI*2);
+            ctx.fillStyle = '#ffffffdd';
+            ctx.fill();
+
+            // ободки
+            if (currentSkinIndex === 0) {
+                ctx.strokeStyle = '#33333330';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, BALL_RADIUS-0.5, 0, Math.PI*2);
+                ctx.stroke();
+            }
+            if (currentSkinIndex === 1) {
+                ctx.strokeStyle = '#aaaaaa80';
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, BALL_RADIUS-0.5, 0, Math.PI*2);
+                ctx.stroke();
+            }
+        }
+
+        // ----- ПОЛНАЯ ОТРИСОВКА -----
+        function draw() {
+            ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+            // блоки
+            blocks.forEach(b => {
+                if (!b.active) return;
+                ctx.fillStyle = b.color;
+                ctx.shadowColor = '#ffffff30';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.roundRect(b.x, b.y, b.w, b.h, 4);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = '#ffffff60';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            });
+            ctx.shadowBlur = 0;
+
+            // мяч
+            drawBall();
+
+            // платформа
+            ctx.shadowColor = '#9ac8ff';
+            ctx.shadowBlur = 12;
+            ctx.fillStyle = '#6f8fc9';
+            ctx.beginPath();
+            ctx.roundRect(paddleX, CANVAS_H - PADDLE_H, PADDLE_W, PADDLE_H, 10);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = '#bcd5ff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // тексты победы/поражения
+            ctx.font = 'bold 24px "Courier New", monospace';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = 'black';
+            ctx.shadowBlur = 8;
+            if (win) {
+                ctx.fillStyle = '#c3f25c';
+                ctx.fillText('ТЕТРИС-ГОЛ!', 250, 200);
+            } else if (gameOver) {
+                ctx.fillStyle = '#f5757d';
+                ctx.fillText('ПРОМАХ', 250, 200);
+            }
+            ctx.shadowBlur = 0;
+        }
+
+        // вспомогательный метод
+        CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+            if (w < 2 * r) r = w / 2;
+            if (h < 2 * r) r = h / 2;
+            this.moveTo(x + r, y);
+            this.lineTo(x + w - r, y);
+            this.quadraticCurveTo(x + w, y, x + w, y + r);
+            this.lineTo(x + w, y + h - r);
+            this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            this.lineTo(x + r, y + h);
+            this.quadraticCurveTo(x, y + h, x, y + h - r);
+            this.lineTo(x, y + r);
+            this.quadraticCurveTo(x, y, x + r, y);
+            this.closePath();
+            return this;
+        };
+
+        // ----- УПРАВЛЕНИЕ ПЛАТФОРМОЙ -----
+        function movePaddleTo(targetX) {
+            if (gameOver || win) return;
+            let newX = targetX - PADDLE_W / 2;
+            if (newX < 0) newX = 0;
+            if (newX + PADDLE_W > CANVAS_W) newX = CANVAS_W - PADDLE_W;
+            paddleX = newX;
+        }
+
+        // ----- СЕНСОРНОЕ/МЫШИНОЕ УПРАВЛЕНИЕ -----
+        let isDragging = false;
+
+        function handleStart(e) {
+            e.preventDefault();
+            isDragging = true;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            let clientX;
+
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+            } else {
+                clientX = e.clientX;
+            }
+
+            const canvasX = (clientX - rect.left) * scaleX;
+            if (canvasX >= 0 && canvasX <= CANVAS_W) {
+                movePaddleTo(canvasX);
+            }
+        }
+
+        function handleMove(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            let clientX;
+
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+            } else {
+                clientX = e.clientX;
+            }
+
+            const canvasX = (clientX - rect.left) * scaleX;
+            if (canvasX >= 0 && canvasX <= CANVAS_W) {
+                movePaddleTo(canvasX);
+            }
+        }
+
+        function handleEnd(e) {
+            e.preventDefault();
+            isDragging = false;
+        }
+
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('mouseup', handleEnd);
+        canvas.addEventListener('mouseleave', handleEnd);
+
+        canvas.addEventListener('touchstart', handleStart, { passive: false });
+        canvas.addEventListener('touchmove', handleMove, { passive: false });
+        canvas.addEventListener('touchend', handleEnd);
+        canvas.addEventListener('touchcancel', handleEnd);
+
+        // клик по мячу для открытия меню (быстрый доступ)
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX, clientY;
+
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            const canvasX = (clientX - rect.left) * scaleX;
+            const canvasY = (clientY - rect.top) * scaleY;
+
+            const dx = canvasX - ball.x;
+            const dy = canvasY - ball.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+
+            if (dist <= BALL_RADIUS + 5) {
+                openSkinMenu();
+            }
+        });
+
+        // ----- МЕНЮ СКИНОВ -----
+        function openSkinMenu() {
+            selectedSkinIndex = currentSkinIndex; // текущий скин как выбранный по умолчанию
+            updateSelectedInMenu();
+            modal.classList.add('active');
+            // ставим паузу (мяч не двигается, пока открыто меню)
+            // но можно оставить как есть - мяч замрёт, потому что update не вызывается в цикле во время открытого меню? нет, цикл продолжается. сделаем флаг паузы.
+            pauseGame = true;
+        }
+
+        function closeSkinMenu() {
+            modal.classList.remove('active');
+            pauseGame = false;
+        }
+
+        function updateSelectedInMenu() {
+            skinOptions.forEach(opt => opt.classList.remove('selected'));
+            if (selectedSkinIndex === 0) document.getElementById('skinOptionWhite').classList.add('selected');
+            if (selectedSkinIndex === 1) document.getElementById('skinOptionBlack').classList.add('selected');
+            if (selectedSkinIndex === 2) document.getElementById('skinOptionRoyal').classList.add('selected');
+        }
+
+        // выбор скина в меню
+        skinOptions.forEach(opt => {
+            opt.addEventListener('click', () => {
+                const skin = opt.dataset.skin;
+                if (skin === 'white') selectedSkinIndex = 0;
+                else if (skin === 'black') selectedSkinIndex = 1;
+                else if (skin === 'royal') selectedSkinIndex = 2;
+                updateSelectedInMenu();
+            });
+        });
+
+        // подтверждение
+        confirmBtn.addEventListener('click', () => {
+            currentSkinIndex = selectedSkinIndex;
+            updateSkinDisplay();
+            closeSkinMenu();
+        });
+
+        // отмена
+        cancelBtn.addEventListener('click', closeSkinMenu);
+
+        // открытие по кнопке
+        openMenuBtn.addEventListener('click', openSkinMenu);
+
+        // клик по оверлею для закрытия (но лучше только по кнопкам, чтобы случайно не закрыть)
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeSkinMenu();
+            }
+        });
+
+        // клавиатура
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeSkinMenu();
+                e.preventDefault();
+            }
+        });
+
+        // ----- КЛАВИШИ ← → (для платформы) -----
+        window.addEventListener('keydown', (e) => {
+            if (modal.classList.contains('active')) return; // не двигаем платформу, если меню открыто
+
+            if (e.key === 'ArrowLeft') {
+                let newX = paddleX - 22;
+                if (newX < 0) newX = 0;
+                if (!gameOver && !win) paddleX = newX;
+                e.preventDefault();
+            } else if (e.key === 'ArrowRight') {
+                let newX = paddleX + 22;
+                if (newX + PADDLE_W > CANVAS_W) newX = CANVAS_W - PADDLE_W;
+                if (!gameOver && !win) paddleX = newX;
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key.startsWith('Arrow')) e.preventDefault();
+        }, { passive: false });
+
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            resetGame();
+        });
+
+        // ----- ИГРОВОЙ ЦИКЛ С ПАУЗОЙ -----
+        let pauseGame = false;
+
+        function gameLoop() {
+            if (!pauseGame) {
+                update();
+            }
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Инициализация
+        resetGame();
+        updateSkinDisplay();
+        gameLoop();
+
+    })();
+</script>
+</body>
+</html>
