@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RETRO AI HAND 2007</title>
+    
+    <!-- Подключаем мозги нейросети (MediaPipe) -->
+    <script src="https://cdn.jsdelivr.net" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net" crossorigin="anonymous"></script>
+
+    <style>
+        body { 
+            margin: 0; 
+            background: #000; 
+            overflow: hidden; 
+            font-family: 'Courier New', Courier, monospace; 
+        }
+        /* Зеркальное отображение холста */
+        #out { 
+            width: 100vw; 
+            height: 100vh; 
+            object-fit: cover; 
+            transform: scaleX(-1); 
+        }
+        /* Ретро-интерфейс */
+        #ui { 
+            position: fixed; 
+            top: 20px; 
+            left: 20px; 
+            z-index: 10; 
+            background: rgba(0, 30, 0, 0.85); 
+            color: #0f0; 
+            padding: 10px; 
+            border: 2px solid #0f0; 
+            font-size: 18px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        video { display: none; } /* Прячем сырое видео */
+    </style>
+</head>
+<body>
+
+    <div id="ui">SYSTEM: <span id="st">LOADING AI...</span></div>
+    <video id="v"></video>
+    <canvas id="out"></canvas>
+
+<script>
+    const v = document.getElementById('v');
+    const c = document.getElementById('out');
+    const ctx = c.getContext('2d');
+    const st = document.getElementById('st');
+
+    // Функция отрисовки результатов
+    function onResults(res) {
+        // Как только пошли данные, меняем статус
+        if (res.multiHandLandmarks && res.multiHandLandmarks.length > 0) {
+            st.innerText = "TARGET: LOCKED";
+            st.style.color = "#ff0";
+        } else {
+            st.innerText = "SCANNING...";
+            st.style.color = "#0f0";
+        }
+
+        ctx.save();
+        ctx.clearRect(0, 0, c.width, c.height);
+        
+        // Рисуем кадр с камеры
+        ctx.drawImage(res.image, 0, 0, c.width, c.height);
+        
+        if (res.multiHandLandmarks) {
+            for (const landmarks of res.multiHandLandmarks) {
+                // ЖЕЛТЫЕ ПАЛОЧКИ (СТИЛЬ 2007)
+                drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {
+                    color: '#ffff00', 
+                    lineWidth: 5
+                });
+                // КРАСНЫЕ ТОЧКИ-СУСТАВЫ
+                drawLandmarks(ctx, landmarks, {
+                    color: '#ff0000', 
+                    fillColor: '#ff0000',
+                    lineWidth: 1, 
+                    radius: 4
+                });
+            }
+        }
+        ctx.restore();
+    }
+
+    // Настройка нейросети
+    const hands = new Hands({locateFile: (file) => {
+        return `https://cdn.jsdelivr.net{file}`;
+    }});
+
+    hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 0, // 0 - самая легкая модель для телефона
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+    });
+    
+    hands.onResults(onResults);
+
+    // Запуск камеры
+    const camera = new Camera(v, {
+        onFrame: async () => {
+            await hands.send({image: v});
+            // Автоподстройка размера холста
+            if(c.width !== v.videoWidth) {
+                c.width = v.videoWidth;
+                c.height = v.videoHeight;
+                st.innerText = "RUNNING"; 
+            }
+        },
+        width: 1280,
+        height: 720
+    });
+    
+    camera.start().catch(err => {
+        st.innerText = "CAMERA ERROR: " + err;
+        st.style.color = "red";
+    });
+</script>
+</body>
+</html>
